@@ -205,3 +205,53 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ---- OS / editor ----
+.DS_Store
+*.swp
+*.swo
+.vscode/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+.env/
+
+# ---- R ----
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# ---- C++ ----
+*.o
+*.out
+*.exe
+*.a
+*.so
+
+# ---- Jupyter / Rmd ----
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+*.html  
+
+# ---- Data ----
+data/
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.sqlite
+*.db
+
+# ---- Logs ----
+*.log
+
+# ---- Misc ----
+*.bak
+*.tmp
