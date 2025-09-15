@@ -1,4 +1,3 @@
-
 library(xml2)
 library(dplyr)
 library(lubridate)
@@ -30,44 +29,75 @@ print("First 20 unique record types:")
 print(head(record_types, 20))
 print(paste("Total unique record types:", length(record_types)))
 
-######################################
-# Building CSV files out of xml data #
-######################################
+#################################################################
+# Building CSV files out of xml data for node types of interest #
+#################################################################
 
-
+# Path for saving CSVs
 path_out <- "personal-projects/data"
 
-# ------ XML to tibble for records -------
+# List of node types you want to extract
+node_types_of_interest <- c("Record", "Workout", "ActivitySummary")
 
-records_df <- tibble(
-  record_id     = seq_along(records),
-  type          = xml_attr(records, "type"),
-  unit          = xml_attr(records, "unit"),
-  value         = as.numeric(xml_attr(records, "value")),
-  sourceName    = xml_attr(records, "sourceName"),
-  sourceVersion = xml_attr(records, "sourceVersion"),
-  device        = xml_attr(records, "device"),
-  creationDate  = ymd_hms(xml_attr(records, "creationDate")),
-  startDate     = ymd_hms(xml_attr(records, "startDate")),
-  endDate       = ymd_hms(xml_attr(records, "endDate"))
-)
+# Function to convert nodes → tibble
+extract_nodes_to_tibble <- function(node_name, health_data) {
+  nodes <- xml_find_all(health_data, paste0("//", node_name))
+  if (length(nodes) == 0) return(NULL)
 
-full_path_records_csv <- file.path(path_out, "health_data_records.csv")
-write.csv(records_df, full_path_records_csv, row.names = FALSE)
+  # Different schemas per node type
+  if (node_name == "Record") {
+    return(tibble(
+      record_id     = seq_along(nodes),
+      type          = xml_attr(nodes, "type"),
+      unit          = xml_attr(nodes, "unit"),
+      value         = as.numeric(xml_attr(nodes, "value")),
+      sourceName    = xml_attr(nodes, "sourceName"),
+      sourceVersion = xml_attr(nodes, "sourceVersion"),
+      device        = xml_attr(nodes, "device"),
+      creationDate  = ymd_hms(xml_attr(nodes, "creationDate")),
+      startDate     = ymd_hms(xml_attr(nodes, "startDate")),
+      endDate       = ymd_hms(xml_attr(nodes, "endDate"))
+    ))
+  }
 
+  if (node_name == "Workout") {
+    return(tibble(
+      workout_id     = seq_along(nodes),
+      activity_type  = xml_attr(nodes, "workoutActivityType"),
+      sourceName     = xml_attr(nodes, "sourceName"),
+      sourceVersion  = xml_attr(nodes, "sourceVersion"),
+      device         = xml_attr(nodes, "device"),
+      creationDate   = ymd_hms(xml_attr(nodes, "creationDate")),
+      startDate      = ymd_hms(xml_attr(nodes, "startDate")),
+      endDate        = ymd_hms(xml_attr(nodes, "endDate")),
+      duration_s     = as.numeric(xml_attr(nodes, "duration")),
+      totalDistance  = as.numeric(xml_attr(nodes, "totalDistance")),
+      totalEnergy    = as.numeric(xml_attr(nodes, "totalEnergyBurned"))
+    ))
+  }
 
-# ------ XML to tibble for workouts -------
+  if (node_name == "ActivitySummary") {
+    return(tibble(
+      summary_id      = seq_along(nodes),
+      date            = xml_attr(nodes, "dateComponents"),
+      activeEnergy    = as.numeric(xml_attr(nodes, "activeEnergyBurned")),
+      exerciseTimeMin = as.numeric(xml_attr(nodes, "appleExerciseTime")),
+      standHours      = as.numeric(xml_attr(nodes, "appleStandHours"))
+    ))
+  }
+}
 
-workout_nodes <- xml_find_all(health_data, "//Workout")
-workouts_df <- tibble::tibble(
-      workout_id      = seq_along(workout_nodes),
-      activity_type   = xml_attr(workout_nodes, "workoutActivityType"),
-      sourceName      = xml_attr(workout_nodes, "sourceName"),
-      sourceVersion   = xml_attr(workout_nodes, "sourceVersion"),
-      device          = xml_attr(workout_nodes, "device"),
-      creationDate_raw= xml_attr(workout_nodes, "creationDate"),
-      startDate_raw   = xml_attr(workout_nodes, "startDate"),
-      endDate_raw     = xml_attr(workout_nodes, "endDate"),
-      duration_s      = as.numeric(xml_attr(workout_nodes, "duration")),
-      totalDistance   = as.numeric(xml_attr(workout_nodes, "totalDistance"))
-    )
+# Loop through node types of interest
+for (node_type in node_types_of_interest) {
+  message("Processing node type: ", node_type)
+  df <- extract_nodes_to_tibble(node_type, health_data)
+
+  if (!is.null(df)) {
+    filename <- paste0("health_data_", tolower(node_type), ".csv")
+    out_path <- file.path(path_out, filename)
+    write.csv(df, out_path, row.names = FALSE)
+    message(" → Saved ", nrow(df), " rows to ", out_path)
+  } else {
+    message(" → Skipped (no schema defined)")
+  }
+}
