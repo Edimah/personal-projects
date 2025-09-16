@@ -4,19 +4,33 @@ library(lubridate)
 library(ggplot2)
 library(viridis)
 
-# Load the CSV files created in health_data_import.R
-records <- read_csv("personal-projects/data/health_data_record.csv")
-workouts <- read_csv("personal-projects/data/health_data_workout.csv")
-activity <- read_csv("personal-projects/data/health_data_activitysummary.csv")
+# Load & preview CSV files created in health_data_import.R
 
-# Quick overview of the data
-print(paste("Total records:", nrow(records)))
-print(paste("Total workouts:", nrow(workouts)))
-print(paste("Total activity summaries:", nrow(activity)))
+print("Records Data")
+records <- read_csv("personal-projects/data/health_data_record.csv")
+glimpse(records)        # Structure & column types
+head(records, 3)        # First 3 rows
+colnames(records)       # Just the column names
+
+print("Workouts Data")
+workouts <- read_csv("personal-projects/data/health_data_workout.csv")
+glimpse(workouts)
+head(workouts, 3)
+colnames(workouts)
+
+print("Activity Summary Data")
+activity <- read_csv("personal-projects/data/health_data_activitysummary.csv")
+glimpse(activity)
+head(activity, 3)
+colnames(activity)
+
+##################################################
+# Basic visualizations using ggplot2 and viridis #
+##################################################
 
 # Example 1: Plotting step count over time from ActivitySummary
 steps_data <- activity %>%
-  filter(!is.na(appleExerciseTime) & !is.na(appleStandHours))
+  filter(!is.na(exerciseTimeMin) & !is.na(standHours))
 steps_data$date <- as.Date(steps_data$date)
 ggplot(steps_data, aes(x = date)) +
   geom_line(aes(y = activeEnergy, color = "Active Energy Burned")) +
