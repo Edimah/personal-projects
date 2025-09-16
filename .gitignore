@@ -255,3 +255,12 @@ data/
 # ---- Misc ----
 *.bak
 *.tmp
+*.png
+*.jpeg
+*.jpg
+*.gif
+*.pdf
+*.zip
+*.tar.gz
+*.rar
+*.7z
