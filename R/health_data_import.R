@@ -1,9 +1,10 @@
 library(xml2)
 library(dplyr)
+library(purrr)
 library(lubridate)
 
 #######################
-# Extracting xml file #
+# Extracting XML file #
 #######################
 
 health_data <- read_xml("personal-projects/data/health_data_export.xml")
@@ -15,7 +16,7 @@ print(paste("Number of different node types:", n_nodes))
 node_types <- unique(xml_name(all_nodes))
 print(paste("Total unique node types:", length(node_types)))
 print("All unique node types:")
-print(node_types, 20)
+print(node_types)
 
 
 # Extract all <Record> nodes
@@ -29,6 +30,33 @@ print("First 20 unique record types:")
 print(head(record_types, 20))
 print(paste("Total unique record types:", length(record_types)))
 
+
+########################
+# Helper preview func  #
+########################
+preview_nodes <- function(xml, node_name, n = 5) {
+  nodes <- xml_find_all(xml, paste0("//", node_name))
+  if (length(nodes) == 0) {
+    cat("\nNo <", node_name, "> nodes found\n")
+    return(NULL)
+  }
+  # Extract first n nodes into a tibble of attributes
+  preview <- map_dfr(head(nodes, n), ~ as.list(xml_attrs(.x))) %>% as_tibble()
+  cat("\n--- Preview of <", node_name, "> (", length(nodes), " total) ---\n")
+  print(preview)
+  invisible(preview)
+}
+
+########################
+# Run previews         #
+########################
+
+# Preview 5 examples from the main node types you found
+node_types <- c("Record", "Workout", "WorkoutEvent", "WorkoutStatistics",
+                "ActivitySummary", "InstantaneousBeatsPerMinute")
+
+walk(node_types, ~ preview_nodes(health_data, .x, n = 5))
+
 #################################################################
 # Building CSV files out of xml data for node types of interest #
 #################################################################
@@ -39,7 +67,7 @@ path_out <- "personal-projects/data"
 # List of node types you want to extract
 node_types_of_interest <- c("Record", "Workout", "ActivitySummary")
 
-# Function to convert nodes → tibble
+# Function to convert nodes from XML to tibble (dataframe)
 extract_nodes_to_tibble <- function(node_name, health_data) {
   nodes <- xml_find_all(health_data, paste0("//", node_name))
   if (length(nodes) == 0) return(NULL)
